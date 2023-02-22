@@ -1,0 +1,76 @@
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+
+#include "drivers/timer.h"
+#include "lib/gfx.h"
+
+#define MAX_DOTS 50
+#define DOT_RADIUS 2
+
+typedef struct {
+    int16_t x;
+    int16_t y;
+    int16_t dx;
+    int16_t dy;
+    uint16_t color;
+} Dot;
+
+static Dot dots[MAX_DOTS];
+
+static void init_dots() {
+    srand(time(NULL));
+    for (int i = 0; i < MAX_DOTS; i++) {
+        dots[i].x = rand() % GFX_WIDTH;
+        dots[i].y = rand() % GFX_HEIGHT;
+        dots[i].dx = (rand() % 3) - 1;
+        dots[i].dy = (rand() % 3) - 1;
+        dots[i].color = rand() % 0xFFFF;
+    }
+}
+
+static void draw_dot(int16_t x, int16_t y, uint16_t color) {
+    for (int16_t i = -DOT_RADIUS; i <= DOT_RADIUS; i++) {
+        for (int16_t j = -DOT_RADIUS; j <= DOT_RADIUS; j++) {
+            if (i*i + j*j <= DOT_RADIUS*DOT_RADIUS) {
+                gfx_draw_pixel(x+i, y+j, color);
+            }
+        }
+    }
+}
+
+static void draw_dots() {
+    for (int i = 0; i < MAX_DOTS; i++) {
+        draw_dot(dots[i].x, dots[i].y, dots[i].color);
+    }
+}
+
+static void move_dots() {
+    for (int i = 0; i < MAX_DOTS; i++) {
+        dots[i].x += dots[i].dx;
+        dots[i].y += dots[i].dy;
+        if (dots[i].x < 0 || dots[i].x >= GFX_WIDTH) {
+            dots[i].dx = -dots[i].dx;
+        }
+        if (dots[i].y < 0 || dots[i].y >= GFX_HEIGHT) {
+            dots[i].dy = -dots[i].dy;
+        }
+    }
+}
+
+int main(void) {
+    gfx_init();
+    init_dots();
+
+    while (true) {
+        gfx_clear(COLOR_BLACK);
+        move_dots();
+        draw_dots();
+        gfx_flush();
+        timer_sleep_ms(50);
+    }
+
+    return 0;
+}
